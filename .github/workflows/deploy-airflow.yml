@@ -210,16 +210,16 @@ jobs:
         make deploy-airflow-v
 
     - name: Verify Deployment
-      run: >-
-        ssh -i ~/.ssh/gcp_key -o StrictHostKeyChecking=no
-          ${{ vars.GCP_SSH_USER }}@${{ steps.get-vm-ip.outputs.vm_ip }}
+      run: |
+        ssh -i ~/.ssh/gcp_key -o StrictHostKeyChecking=no \
+          ${{ vars.GCP_SSH_USER }}@${{ steps.get-vm-ip.outputs.vm_ip }} \
           "cd /opt/airflow && docker compose ps"
 
     - name: Cleanup SSH Key
       if: always()
-      run: >-
-        gcloud compute instances remove-metadata ${{ secrets.GCP_VM_NAME }}
-          --zone=${{ secrets.GCP_ZONE }}
+      run: |
+        gcloud compute instances remove-metadata ${{ secrets.GCP_VM_NAME }} \
+          --zone=${{ secrets.GCP_ZONE }} \
           --keys ssh-keys
 
     - name: Deployment Summary
