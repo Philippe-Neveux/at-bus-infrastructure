@@ -1,0 +1,106 @@
+---
+- name: Copy docker-compose file
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ airflow_project_dir }}/docker-compose.yml"
+    owner: airflow
+    group: airflow
+    mode: '0644'
+
+- name: Copy DAGs
+  copy:
+    src: "{{ playbook_dir }}/../airflow/dags/"
+    dest: "{{ airflow_project_dir }}/dags/"
+
+- name: Copy plugins
+  copy:
+    src: "{{ playbook_dir }}/../airflow/plugins/"
+    dest: "{{ airflow_project_dir }}/plugins/"
+
+- name: Copy Airflow configuration
+  copy:
+    src: "{{ playbook_dir }}/../airflow/config/"
+    dest: "{{ airflow_project_dir }}/config/"
+
+- name: Create .env file
+  template:
+    src: ../../templates/environment.j2
+    dest: "{{ airflow_project_dir }}/.env"
+    owner: airflow
+    group: airflow
+    mode: '0644'
+
+- name: Set correct permissions for airflow directories
+  file:
+    path: "{{ item }}"
+    owner: airflow
+    group: airflow
+    recurse: yes
+  loop:
+    - "{{ airflow_project_dir }}/dags"
+    - "{{ airflow_project_dir }}/logs"
+    - "{{ airflow_project_dir }}/plugins"
+    - "{{ airflow_project_dir }}/config"
+
+- name: Ensure credentials directory exists
+  file:
+    path: "{{ airflow_project_dir }}/credentials"
+    state: directory
+    owner: airflow
+    group: airflow
+    mode: '0700'
+
+- name: Copy Google Cloud service account key
+  copy:
+    src: "{{ playbook_dir }}/../ansible/files/credentials/airflow-server-key.json"
+    dest: "{{ airflow_project_dir }}/credentials/airflow-server-key.json"
+    owner: airflow
+    group: airflow
+    mode: '0600'
+
+- name: Ensure airflow user is in docker group
+  user:
+    name: airflow
+    groups: docker
+    append: yes
+
+- name: Authenticate Docker to Google Cloud Artifact Registry
+  shell: |
+    gcloud auth configure-docker {{ gcp_region }}-docker.pkg.dev --quiet
+  become: yes
+  become_user: airflow
+  environment:
+    GOOGLE_APPLICATION_CREDENTIALS: "{{ airflow_project_dir }}/credentials/airflow-server-key.json"
+  register: docker_auth_result
+  changed_when: docker_auth_result.rc == 0
+
+- name: Alternative Docker authentication using service account key
+  shell: |
+    cat {{ airflow_project_dir }}/credentials/airflow-server-key.json | docker login -u _json_key --password-stdin {{ gcp_region }}-docker.pkg.dev
+  become: yes
+  become_user: airflow
+  when: docker_auth_result.rc != 0
+  register: docker_auth_alt_result
+  changed_when: docker_auth_alt_result.rc == 0
+
+- name: Test Docker image pull
+  shell: |
+    docker pull {{ gcp_region }}-docker.pkg.dev/{{ gcp_project_id }}/airflow-images/{{ image_name }}:latest
+  become: yes
+  become_user: airflow
+  register: docker_pull_result
+  changed_when: docker_pull_result.rc == 0
+
+- name: Create systemd service for Airflow
+  template:
+    src: airflow.service.j2
+    dest: /etc/systemd/system/airflow.service
+    mode: '0644'
+  notify: reload systemd
+
+- name: Enable and start Airflow service
+  systemd:
+    name: airflow
+    state: started
+    enabled: yes
+    daemon_reload: yes 

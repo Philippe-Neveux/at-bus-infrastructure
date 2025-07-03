@@ -1,0 +1,8 @@
+---
+all:
+  children:
+    airflow_servers:
+      hosts:
+        airflow-prod:
+          ansible_host: 34.40.187.245
+          ansible_user: at_bus_infrastructure 

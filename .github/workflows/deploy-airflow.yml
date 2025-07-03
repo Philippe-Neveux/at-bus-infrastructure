@@ -1,0 +1,176 @@
+name: Deploy Airflow to GCP VM
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - staging
+        - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+
+    - name: Install dependencies
+      run: |
+        uv sync --locked
+
+    - name: Install Ansible Collections
+      run: |
+        uv run ansible-galaxy collection install -r ansible/requirements.yml
+
+    - uses: 'google-github-actions/auth@v2'
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Setup Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        
+
+    - name: Check VM Status
+      id: check-vm-status
+      run: |
+        VM_STATUS=$(gcloud compute instances describe ${{ secrets.GCP_VM_NAME }} \
+          --zone=${{ secrets.GCP_ZONE }} \
+          --format="value(status)")
+        echo "vm_status=$VM_STATUS" >> $GITHUB_OUTPUT
+        echo "Current VM status: $VM_STATUS"
+
+    - name: Start VM if stopped
+      if: steps.check-vm-status.outputs.vm_status == 'TERMINATED'
+      run: |
+        echo "Starting VM..."
+        gcloud compute instances start ${{ secrets.GCP_VM_NAME }} \
+          --zone=${{ secrets.GCP_ZONE }}
+        
+        echo "Waiting for VM to be ready..."
+        gcloud compute instances wait-for-instance ${{ secrets.GCP_VM_NAME }} \
+          --zone=${{ secrets.GCP_ZONE }}
+        
+        echo "Waiting for VM to be fully initialized..."
+        sleep 30
+
+    - name: Get VM IP
+      id: get-vm-ip
+      run: |
+        VM_IP=$(gcloud compute instances describe ${{ secrets.GCP_VM_NAME }} \
+          --zone=${{ secrets.GCP_ZONE }} \
+          --format="value(networkInterfaces[0].accessConfigs[0].natIP)")
+        echo "vm_ip=$VM_IP" >> $GITHUB_OUTPUT
+        echo "VM IP: $VM_IP"
+
+    - name: Generate SSH Key
+      run: |
+        ssh-keygen -t rsa -b 4096 -f ~/.ssh/gcp_key -N ""
+        echo "${{ secrets.GCP_SSH_PUBLIC_KEY }}" > ~/.ssh/gcp_key.pub
+
+    - name: Add SSH Key to VM
+      run: |
+        gcloud compute instances add-metadata ${{ secrets.GCP_VM_NAME }} \
+          --zone=${{ secrets.GCP_ZONE }} \
+          --metadata ssh-keys="github-actions:$(cat ~/.ssh/gcp_key.pub)"
+
+    - name: Wait for SSH to be ready
+      run: |
+        for i in {1..30}; do
+          if ssh -i ~/.ssh/gcp_key -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
+             ${{ secrets.GCP_SSH_USER }}@${{ steps.get-vm-ip.outputs.vm_ip }} "echo 'SSH ready'"; then
+            echo "SSH connection established on attempt $i"
+            break
+          fi
+          echo "Waiting for SSH... attempt $i"
+          sleep 10
+        done
+
+    - name: Update Ansible Inventory
+      run: |
+        # Update the production inventory with the current VM IP
+        cat > ansible/inventory/production.yml << EOF
+        ---
+        all:
+          children:
+            airflow_servers:
+              hosts:
+                airflow-${{ github.event.inputs.environment || 'production' }}:
+                  ansible_host: ${{ steps.get-vm-ip.outputs.vm_ip }}
+                  ansible_user: ${{ secrets.GCP_SSH_USER }}
+        EOF
+
+    - name: Update Group Variables
+      run: |
+        # Update the airflow_servers group variables
+        cat > ansible/inventory/group_vars/airflow_servers.yml << EOF
+        ---
+        # Airflow Server Configuration
+        airflow_version: "2.10.5"
+        airflow_uid: 50000
+        airflow_project_dir: /opt/airflow
+        gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
+        gcp_region: ${{ secrets.GCP_REGION }}
+        image_name: ${{ vars.IMAGE_NAME }}
+        airflow_admin_username: ${{ secrets.AIRFLOW_ADMIN_USERNAME }}
+        airflow_admin_password: ${{ secrets.AIRFLOW_ADMIN_PASSWORD }}
+        airflow_webserver_port: 8080
+        airflow_flower_port: 5555
+        EOF
+
+    - name: Update Global Variables
+      run: |
+        # Update global variables with SSH configuration
+        cat > ansible/inventory/group_vars/all.yml << EOF
+        ---
+        # Global SSH Configuration for all hosts
+        ansible_ssh_private_key_file: ~/.ssh/gcp_key
+        ansible_python_interpreter: /usr/bin/python3
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+        EOF
+
+    - name: Copy GCP Credentials
+      run: |
+        mkdir -p ansible/files/credentials
+        echo '${{ secrets.GCP_SA_KEY }}' | base64 -d > ansible/files/credentials/airflow-server-key.json
+
+    - name: Run Ansible Playbook
+      run: |
+        cd ansible
+        make check-syntax-playbooks
+        make deploy-airflow-v
+
+    - name: Verify Deployment
+      run: >-
+        ssh -i ~/.ssh/gcp_key -o StrictHostKeyChecking=no
+          ${{ secrets.GCP_SSH_USER }}@${{ steps.get-vm-ip.outputs.vm_ip }}
+          "cd /opt/airflow && docker compose ps"
+
+    - name: Cleanup SSH Key
+      if: always()
+      run: >-
+        gcloud compute instances remove-metadata ${{ secrets.GCP_VM_NAME }}
+          --zone=${{ secrets.GCP_ZONE }}
+          --keys ssh-keys
+
+    - name: Deployment Summary
+      run: |
+        echo "🚀 Airflow deployment completed!"
+        echo "🌐 Web UI: http://${{ steps.get-vm-ip.outputs.vm_ip }}:8080"
+        echo "🔧 Nginx Proxy: http://${{ steps.get-vm-ip.outputs.vm_ip }}"
+        echo "🌸 Flower: http://${{ steps.get-vm-ip.outputs.vm_ip }}:5555" 
