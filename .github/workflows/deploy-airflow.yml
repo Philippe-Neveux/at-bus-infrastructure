@@ -22,10 +22,12 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
     - name: Update submodules and commit if changed
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
         git submodule update --init --recursive --remote
         if [[ -n "$(git status --porcelain)" ]]; then
@@ -87,6 +89,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
     - uses: 'google-github-actions/auth@v2'
       with:
@@ -118,20 +122,6 @@ jobs:
         echo "vm_ip=$VM_IP" >> $GITHUB_OUTPUT
         echo "VM IP: $VM_IP"
 
-    - name: Setup SSH Key
-      run: |
-        # Create SSH directory
-        mkdir -p ~/.ssh
-        chmod 700 ~/.ssh
-        
-        # Generate a new SSH key pair
-        ssh-keygen -t rsa -b 4096 -f ~/.ssh/gcp_key -N ""
-        chmod 600 ~/.ssh/gcp_key
-        chmod 644 ~/.ssh/gcp_key.pub
-        
-        # Display the public key for verification
-        echo "Generated public key:"
-        cat ~/.ssh/gcp_key.pub
 
     - name: Add SSH Key to VM
       run: |
