@@ -17,9 +17,32 @@ on:
         - production
 
 jobs:
+  update-submodules:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Update submodules and commit if changed
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        git submodule update --init --recursive --remote
+        if [[ -n "$(git status --porcelain)" ]]; then
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "chore: update submodules [skip ci]"
+          git push origin HEAD:${GITHUB_REF#refs/heads/}
+          echo "Submodule changes committed and pushed. Exiting early."
+          exit 0
+        else
+          echo "No submodule changes detected."
+        fi
+
   setup-gcp-vm:
     runs-on: ubuntu-latest
-    
+    needs: update-submodules
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
