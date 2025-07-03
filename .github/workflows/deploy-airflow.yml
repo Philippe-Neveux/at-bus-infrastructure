@@ -17,23 +17,12 @@ on:
         - production
 
 jobs:
-  deploy:
+  setup-gcp-vm:
     runs-on: ubuntu-latest
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
-    - name: Install uv
-      uses: astral-sh/setup-uv@v5
-
-    - name: Install dependencies
-      run: |
-        uv sync --locked
-
-    - name: Install Ansible Collections
-      run: |
-        uv run ansible-galaxy collection install -r ansible/requirements.yml
 
     - uses: 'google-github-actions/auth@v2'
       with:
@@ -45,7 +34,6 @@ jobs:
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         
-
     - name: Check VM Status
       id: check-vm-status
       run: |
@@ -69,6 +57,35 @@ jobs:
         echo "Waiting for VM to be fully initialized..."
         sleep 30
 
+  deploy-airflow:
+    runs-on: ubuntu-latest
+    needs: setup-gcp-vm
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - uses: 'google-github-actions/auth@v2'
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Setup Google Cloud CLI
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+
+    - name: Install dependencies
+      run: |
+        uv sync --locked
+
+    - name: Install Ansible Collections
+      run: |
+        uv run ansible-galaxy collection install -r ansible/requirements.yml
+
     - name: Get VM IP
       id: get-vm-ip
       run: |
@@ -78,22 +95,36 @@ jobs:
         echo "vm_ip=$VM_IP" >> $GITHUB_OUTPUT
         echo "VM IP: $VM_IP"
 
-    - name: Generate SSH Key
+    - name: Setup SSH Key
       run: |
+        # Create SSH directory
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        
+        # Generate a new SSH key pair
         ssh-keygen -t rsa -b 4096 -f ~/.ssh/gcp_key -N ""
-        echo "${{ secrets.GCP_SSH_PUBLIC_KEY }}" > ~/.ssh/gcp_key.pub
+        chmod 600 ~/.ssh/gcp_key
+        chmod 644 ~/.ssh/gcp_key.pub
+        
+        # Display the public key for verification
+        echo "Generated public key:"
+        cat ~/.ssh/gcp_key.pub
 
     - name: Add SSH Key to VM
       run: |
         gcloud compute instances add-metadata ${{ secrets.GCP_VM_NAME }} \
           --zone=${{ secrets.GCP_ZONE }} \
-          --metadata ssh-keys="github-actions:$(cat ~/.ssh/gcp_key.pub)"
+          --metadata ssh-keys="${{ vars.GCP_SSH_USER }}:$(cat ~/.ssh/gcp_key.pub)"
+        
+        # Wait for metadata to be applied
+        echo "Waiting for SSH key to be applied to VM..."
+        sleep 30
 
     - name: Wait for SSH to be ready
       run: |
         for i in {1..30}; do
           if ssh -i ~/.ssh/gcp_key -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
-             ${{ secrets.GCP_SSH_USER }}@${{ steps.get-vm-ip.outputs.vm_ip }} "echo 'SSH ready'"; then
+             ${{ vars.GCP_SSH_USER }}@${{ steps.get-vm-ip.outputs.vm_ip }} "echo 'SSH ready'"; then
             echo "SSH connection established on attempt $i"
             break
           fi
@@ -112,7 +143,7 @@ jobs:
               hosts:
                 airflow-${{ github.event.inputs.environment || 'production' }}:
                   ansible_host: ${{ steps.get-vm-ip.outputs.vm_ip }}
-                  ansible_user: ${{ secrets.GCP_SSH_USER }}
+                  ansible_user: ${{ vars.GCP_SSH_USER }}
         EOF
 
     - name: Update Group Variables
@@ -158,7 +189,7 @@ jobs:
     - name: Verify Deployment
       run: >-
         ssh -i ~/.ssh/gcp_key -o StrictHostKeyChecking=no
-          ${{ secrets.GCP_SSH_USER }}@${{ steps.get-vm-ip.outputs.vm_ip }}
+          ${{ vars.GCP_SSH_USER }}@${{ steps.get-vm-ip.outputs.vm_ip }}
           "cd /opt/airflow && docker compose ps"
 
     - name: Cleanup SSH Key
