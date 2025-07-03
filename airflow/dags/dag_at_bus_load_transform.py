@@ -26,13 +26,13 @@ def get_gcp_token_from_default_credentials() -> str:
     schedule='0 8 * * *',
     start_date=datetime(2024, 1, 1),
     catchup=False,
-    tags=["at-bus-load"],
+    tags=["at-bus-load-transform"],
     # Define default parameters that can be overridden from the UI
     params={
         "execution_date": None,  # None means use DAG's execution date by default
     },
 )
-def DAG_at_bus_load():
+def DAG_at_bus_load_transform():
 
     token = get_gcp_token_from_default_credentials()
 
@@ -73,4 +73,4 @@ def DAG_at_bus_load():
 
     get_at_api_data >> move_gcs_data_to_bq >> transform_bq_data
 
-DAG_at_bus_load()
+DAG_at_bus_load_transform()
