@@ -12,11 +12,6 @@
     src: "{{ playbook_dir }}/../../../airflow/dags/"
     dest: "{{ airflow_project_dir }}/dags/"
 
-- name: Copy plugins
-  copy:
-    src: "{{ playbook_dir }}/../../../airflow/plugins/"
-    dest: "{{ airflow_project_dir }}/plugins/"
-
 - name: Copy Airflow configuration
   copy:
     src: "{{ playbook_dir }}/../../../airflow/config/"
