@@ -9,17 +9,17 @@
 
 - name: Copy DAGs
   copy:
-    src: "{{ playbook_dir }}/../airflow/dags/"
+    src: "{{ playbook_dir }}/../../../airflow/dags/"
     dest: "{{ airflow_project_dir }}/dags/"
 
 - name: Copy plugins
   copy:
-    src: "{{ playbook_dir }}/../airflow/plugins/"
+    src: "{{ playbook_dir }}/../../../airflow/plugins/"
     dest: "{{ airflow_project_dir }}/plugins/"
 
 - name: Copy Airflow configuration
   copy:
-    src: "{{ playbook_dir }}/../airflow/config/"
+    src: "{{ playbook_dir }}/../../../airflow/config/"
     dest: "{{ airflow_project_dir }}/config/"
 
 - name: Create .env file
@@ -52,7 +52,7 @@
 
 - name: Copy Google Cloud service account key
   copy:
-    src: "{{ playbook_dir }}/../ansible/files/credentials/airflow-server-key.json"
+    src: "{{ playbook_dir }}/../../../ansible/files/credentials/airflow-server-key.json"
     dest: "{{ airflow_project_dir }}/credentials/airflow-server-key.json"
     owner: airflow
     group: airflow
