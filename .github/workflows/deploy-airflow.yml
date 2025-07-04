@@ -124,6 +124,43 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Debug - Show Repository Tree Structure
+      run: |
+        echo "=== Repository Root Structure ==="
+        pwd
+        ls -la
+        
+        echo -e "\n=== Full Directory Tree (excluding .git) ==="
+        find . -type f -not -path "./.git/*" | head -50
+        
+        echo -e "\n=== Submodule Status ==="
+        git submodule status
+        
+        echo -e "\n=== Submodule Details ==="
+        git submodule foreach 'echo "Submodule: $name at $path"; git log --oneline -1; echo "---"'
+        
+        echo -e "\n=== Key Directories Check ==="
+        if [ -d "ansible" ]; then
+          echo "✅ ansible directory exists"
+          ls -la ansible/
+        else
+          echo "❌ ansible directory missing"
+        fi
+        
+        if [ -d "airflow" ]; then
+          echo "✅ airflow directory exists"
+          ls -la airflow/
+        else
+          echo "❌ airflow directory missing"
+        fi
+        
+        if [ -d "airflow/dags/dbt" ]; then
+          echo "✅ dbt submodule exists"
+          ls -la airflow/dags/dbt/
+        else
+          echo "❌ dbt submodule missing"
+        fi
+
     - uses: 'google-github-actions/auth@v2'
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
