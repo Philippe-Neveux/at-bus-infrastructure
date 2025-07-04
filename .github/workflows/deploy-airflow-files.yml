@@ -1,4 +1,4 @@
-name: Deploy Airflow to GCP VM
+name: Deploy Dags to Airflow Server
 
 # =============================================================================
 # GITHUB REPOSITORY SETUP REQUIRED
