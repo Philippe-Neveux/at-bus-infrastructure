@@ -155,10 +155,19 @@ jobs:
         fi
         
         if [ -d "airflow/dags/dbt" ]; then
-          echo "✅ dbt submodule exists"
+          echo "✅ dbt directory exists"
           ls -la airflow/dags/dbt/
+          
+          if [ -d "airflow/dags/dbt/dbt-at-bus-transform" ]; then
+            echo "✅ dbt-at-bus-transform submodule exists"
+            ls -la airflow/dags/dbt/dbt-at-bus-transform/
+            echo "Submodule git status:"
+            cd airflow/dags/dbt/dbt-at-bus-transform && git status --porcelain && cd ../../../../..
+          else
+            echo "❌ dbt-at-bus-transform submodule missing"
+          fi
         else
-          echo "❌ dbt submodule missing"
+          echo "❌ dbt directory missing"
         fi
 
     - uses: 'google-github-actions/auth@v2'
