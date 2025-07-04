@@ -1,5 +1,27 @@
 name: Deploy Airflow to GCP VM
 
+# =============================================================================
+# GITHUB REPOSITORY SETUP REQUIRED
+# =============================================================================
+# 
+# This workflow requires the following GitHub repository configuration:
+#
+# SECRETS (Settings > Secrets and variables > Actions > Secrets):
+# - GCP_PROJECT_ID: Your Google Cloud Project ID
+# - GCP_SA_KEY: Base64-encoded service account key JSON
+# - GCP_VM_NAME: Name of your GCP VM instance
+# - GCP_ZONE: GCP zone where VM is located (e.g., australia-southeast1-a)
+# - GCP_REGION: GCP region (e.g., australia-southeast1)
+# - AIRFLOW_ADMIN_USERNAME: Airflow admin username
+# - AIRFLOW_ADMIN_PASSWORD: Airflow admin password
+# - GH_TOKEN: GitHub token for submodule updates
+#
+# VARIABLES (Settings > Secrets and variables > Actions > Variables):
+# - GCP_SSH_USER: SSH username for VM (e.g., gh-actions)
+# - IMAGE_NAME: Docker image name for Airflow
+#
+# =============================================================================
+
 on:
   push:
     branches: [ main ]
@@ -76,8 +98,18 @@ jobs:
           --zone=${{ secrets.GCP_ZONE }}
         
         echo "Waiting for VM to be ready..."
-        gcloud compute instances wait-for-instance ${{ secrets.GCP_VM_NAME }} \
-          --zone=${{ secrets.GCP_ZONE }}
+        # Wait for the instance to be running
+        for i in {1..30}; do
+          VM_STATUS=$(gcloud compute instances describe ${{ secrets.GCP_VM_NAME }} \
+            --zone=${{ secrets.GCP_ZONE }} \
+            --format="value(status)")
+          if [[ "$VM_STATUS" == "RUNNING" ]]; then
+            echo "VM is now running"
+            break
+          fi
+          echo "Waiting for VM to be running... attempt $i (status: $VM_STATUS)"
+          sleep 10
+        done
         
         echo "Waiting for VM to be fully initialized..."
         sleep 30
@@ -113,6 +145,14 @@ jobs:
       run: |
         uv run ansible-galaxy collection install -r ansible/requirements.yml
 
+    - name: Generate SSH Key Pair
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keygen -t rsa -b 4096 -f ~/.ssh/at-bus-infrastructure-key -N "" -C "github-actions@deployment"
+        chmod 600 ~/.ssh/at-bus-infrastructure-key
+        chmod 644 ~/.ssh/at-bus-infrastructure-key.pub
+        echo "SSH key pair generated successfully"
+
     - name: Get VM IP
       id: get-vm-ip
       run: |
@@ -122,12 +162,11 @@ jobs:
         echo "vm_ip=$VM_IP" >> $GITHUB_OUTPUT
         echo "VM IP: $VM_IP"
 
-
     - name: Add SSH Key to VM
       run: |
         gcloud compute instances add-metadata ${{ secrets.GCP_VM_NAME }} \
           --zone=${{ secrets.GCP_ZONE }} \
-          --metadata ssh-keys="${{ vars.GCP_SSH_USER }}:$(cat ~/.ssh/gcp_key.pub)"
+          --metadata ssh-keys="${{ vars.GCP_SSH_USER }}:$(cat ~/.ssh/at-bus-infrastructure-key.pub)"
         
         # Wait for metadata to be applied
         echo "Waiting for SSH key to be applied to VM..."
@@ -135,13 +174,26 @@ jobs:
 
     - name: Wait for SSH to be ready
       run: |
+        echo "Testing SSH connection with generated key..."
+        echo "SSH key location: ~/.ssh/at-bus-infrastructure-key"
+        echo "SSH key permissions: $(ls -la ~/.ssh/at-bus-infrastructure-key)"
+        echo "SSH public key:"
+        cat ~/.ssh/at-bus-infrastructure-key.pub
+        
         for i in {1..30}; do
-          if ssh -i ~/.ssh/gcp_key -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
+          echo "Attempt $i: Testing SSH connection to ${{ vars.GCP_SSH_USER }}@${{ steps.get-vm-ip.outputs.vm_ip }}"
+          if ssh -i ~/.ssh/at-bus-infrastructure-key -o StrictHostKeyChecking=no -o ConnectTimeout=10 -o UserKnownHostsFile=/dev/null \
              ${{ vars.GCP_SSH_USER }}@${{ steps.get-vm-ip.outputs.vm_ip }} "echo 'SSH ready'"; then
             echo "SSH connection established on attempt $i"
             break
           fi
-          echo "Waiting for SSH... attempt $i"
+          echo "SSH connection failed on attempt $i"
+          if [ $i -eq 30 ]; then
+            echo "Failed to establish SSH connection after 30 attempts"
+            echo "Checking VM status..."
+            gcloud compute instances describe ${{ secrets.GCP_VM_NAME }} --zone=${{ secrets.GCP_ZONE }}
+            exit 1
+          fi
           sleep 10
         done
 
@@ -183,14 +235,13 @@ jobs:
         cat > ansible/inventory/group_vars/all.yml << EOF
         ---
         # Global SSH Configuration for all hosts
-        ansible_ssh_private_key_file: ~/.ssh/gcp_key
+        ansible_ssh_private_key_file: ~/.ssh/at-bus-infrastructure-key
         ansible_python_interpreter: /usr/bin/python3
         ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
         EOF
 
     - name: Copy GCP Credentials
       run: |
-        mkdir -p ansible/files/credentials
         echo '${{ secrets.GCP_SA_KEY }}' | base64 -d > ansible/files/credentials/airflow-server-key.json
 
     - name: Run Ansible Playbook
@@ -201,7 +252,7 @@ jobs:
 
     - name: Verify Deployment
       run: |
-        ssh -i ~/.ssh/gcp_key -o StrictHostKeyChecking=no \
+        ssh -i ~/.ssh/at-bus-infrastructure-key -o StrictHostKeyChecking=no \
           ${{ vars.GCP_SSH_USER }}@${{ steps.get-vm-ip.outputs.vm_ip }} \
           "cd /opt/airflow && docker compose ps"
 

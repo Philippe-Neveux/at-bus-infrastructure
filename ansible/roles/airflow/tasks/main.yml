@@ -7,15 +7,53 @@
     group: airflow
     mode: '0644'
 
+# Alternative approach using synchronize (more efficient for large directories)
+- name: Synchronize DAGs directory (with delete)
+  synchronize:
+    src: "{{ playbook_dir }}/../../../airflow/dags/"
+    dest: "{{ airflow_project_dir }}/dags/"
+    delete: "{{ clean_deployment | default(false) }}"
+    recursive: yes
+    owner: yes
+    group: yes
+  when: use_synchronize | default(false)
+
+# Original approach with manual cleanup
+- name: Clean existing DAGs directory
+  file:
+    path: "{{ airflow_project_dir }}/dags"
+    state: absent
+  when: clean_deployment | default(false) and not (use_synchronize | default(false))
+
 - name: Copy DAGs
   copy:
     src: "{{ playbook_dir }}/../../../airflow/dags/"
     dest: "{{ airflow_project_dir }}/dags/"
+  when: not (use_synchronize | default(false))
+
+# Alternative approach using synchronize for config
+- name: Synchronize config directory (with delete)
+  synchronize:
+    src: "{{ playbook_dir }}/../../../airflow/config/"
+    dest: "{{ airflow_project_dir }}/config/"
+    delete: "{{ clean_deployment | default(false) }}"
+    recursive: yes
+    owner: yes
+    group: yes
+  when: use_synchronize | default(false)
+
+# Original approach with manual cleanup
+- name: Clean existing config directory
+  file:
+    path: "{{ airflow_project_dir }}/config"
+    state: absent
+  when: clean_deployment | default(false) and not (use_synchronize | default(false))
 
 - name: Copy Airflow configuration
   copy:
     src: "{{ playbook_dir }}/../../../airflow/config/"
     dest: "{{ airflow_project_dir }}/config/"
+  when: not (use_synchronize | default(false))
 
 - name: Create .env file
   template:
@@ -33,9 +71,7 @@
     recurse: yes
   loop:
     - "{{ airflow_project_dir }}/dags"
-    - "{{ airflow_project_dir }}/logs"
     - "{{ airflow_project_dir }}/plugins"
-    - "{{ airflow_project_dir }}/config"
 
 - name: Ensure credentials directory exists
   file:
@@ -44,6 +80,20 @@
     owner: airflow
     group: airflow
     mode: '0700'
+
+- name: Clean existing credentials (except service account key)
+  find:
+    paths: "{{ airflow_project_dir }}/credentials"
+    excludes: "airflow-server-key.json"
+  register: existing_credentials
+  when: clean_deployment | default(false)
+
+- name: Remove old credential files
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ existing_credentials.files }}"
+  when: clean_deployment | default(false) and existing_credentials.files | length > 0
 
 - name: Copy Google Cloud service account key
   copy:
