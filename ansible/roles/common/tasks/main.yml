@@ -16,6 +16,7 @@
       - python3-dev
       - build-essential
       - htop
+      - rsync
     state: present
     update_cache: yes
   when: ansible_os_family == "Debian"

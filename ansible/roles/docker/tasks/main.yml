@@ -32,6 +32,13 @@
 
 # Note: airflow user is already created with docker group in common role
 
+- name: Set docker.sock permissions to 666
+  file:
+    path: /var/run/docker.sock
+    mode: '0666'
+    state: file
+  when: ansible_os_family == "Debian"
+
 - name: Configure Docker daemon
   template:
     src: daemon.json.j2
@@ -46,6 +53,7 @@
     state: restarted
     daemon_reload: yes
   when: docker_daemon_config.changed
+  notify: ensure docker.sock permissions after restart
 
 - name: Create docker-compose directory
   file:

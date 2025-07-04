@@ -13,4 +13,3 @@ airflow_flower_port: 5555
 
 # Deployment Configuration
 clean_deployment: true  # Set to true to remove existing files before copying new ones
-use_synchronize: false  # Set to true to use rsync-based synchronize module (more efficient for large directories) 

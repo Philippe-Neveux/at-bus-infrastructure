@@ -1,4 +1,7 @@
 from datetime import datetime, timedelta
+import os
+
+os.environ['GCP_DATASET_BIGQUERY'] = 'at_bus'
 
 from airflow.decorators import task, dag
 from airflow.providers.docker.operators.docker import DockerOperator
@@ -44,7 +47,7 @@ def DAG_at_bus_load_transform():
         auto_remove="force",
         environment={"GCP_TOKEN": token},
         # Task-specific retry configuration (overrides DAG defaults)
-        retries=5,
+        retries=1,
     )
 
     move_gcs_data_to_bq = DockerOperator(

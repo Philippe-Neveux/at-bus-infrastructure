@@ -1,6 +1,9 @@
 deploy-airflow:
 	uv run ansible-playbook -i inventory/production.yml playbooks/deploy/airflow.yml
 
+deploy-airflow-files:
+	uv run ansible-playbook -i inventory/production.yml playbooks/deploy/airflow.yml --tags files
+
 deploy-airflow-v:
 	uv run ansible-playbook -i inventory/production.yml playbooks/deploy/airflow.yml -v
 

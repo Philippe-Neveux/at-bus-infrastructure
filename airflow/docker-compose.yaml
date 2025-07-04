@@ -73,7 +73,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ${AIRFLOW_PROJ_DIR:-.}/credentials/airflow-server-key.json:/opt/airflow/credentials/airflow-server-key.json:ro
     - /var/run/docker.sock:/var/run/docker.sock
-    - ~/.docker/config.json:/home/airflow/.docker/config.json
+    - /home/airflow/.docker:/home/airflow/.docker:ro
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on

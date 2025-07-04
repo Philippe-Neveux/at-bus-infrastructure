@@ -36,7 +36,7 @@ read -p "Enter SSH username: " SSH_USER
 
 # Generate SSH key
 echo "🔑 Generating SSH key..."
-ssh-keygen -t ed25519 -f ~/.ssh/at-bus-infrastructure-key -N "" -C "github-actions@$PROJECT_ID"
+ssh-keygen -t ed25519 -f ~/.ssh/at-bus-infrastructure-key -N "" -C "$SSH_USER@$PROJECT_ID"
 
 # Add SSH key to VM
 echo "🔧 Adding SSH key to VM..."
