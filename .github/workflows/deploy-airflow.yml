@@ -167,10 +167,6 @@ jobs:
         gcloud compute instances add-metadata ${{ secrets.GCP_VM_NAME }} \
           --zone=${{ secrets.GCP_ZONE }} \
           --metadata ssh-keys="${{ vars.GCP_SSH_USER }}:$(cat ~/.ssh/at-bus-infrastructure-key.pub)"
-        
-        # Wait for metadata to be applied
-        echo "Waiting for SSH key to be applied to VM..."
-        sleep 30
 
     - name: Wait for SSH to be ready
       run: |
