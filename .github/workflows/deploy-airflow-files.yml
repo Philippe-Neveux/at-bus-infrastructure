@@ -14,11 +14,29 @@ name: Deploy Dags to Airflow Server
 # - GCP_REGION: GCP region (e.g., australia-southeast1)
 # - AIRFLOW_ADMIN_USERNAME: Airflow admin username
 # - AIRFLOW_ADMIN_PASSWORD: Airflow admin password
-# - GH_TOKEN: GitHub token for submodule updates
 #
 # VARIABLES (Settings > Secrets and variables > Actions > Variables):
 # - GCP_SSH_USER: SSH username for VM (e.g., gh-actions)
 # - IMAGE_NAME: Docker image name for Airflow
+#
+# NOTE: If you want auto-commit of submodule updates, add this to the workflow:
+# permissions:
+#   contents: write
+# And replace the "Update submodules" step with:
+# - name: Update submodules and commit if changed
+#   run: |
+#     git submodule update --init --recursive --remote
+#     if [[ -n "$(git status --porcelain)" ]]; then
+#       git config user.name "github-actions[bot]"
+#       git config user.email "github-actions[bot]@users.noreply.github.com"
+#       git add .
+#       git commit -m "chore: update submodules [skip ci]"
+#       git push origin main
+#       echo "Submodule changes committed and pushed. Exiting early."
+#       exit 0
+#     else
+#       echo "No submodule changes detected."
+#     fi
 #
 # =============================================================================
 
@@ -43,21 +61,10 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Update submodules and commit if changed
+    - name: Update submodules
       run: |
         git submodule update --init --recursive --remote
-        if [[ -n "$(git status --porcelain)" ]]; then
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git commit -m "chore: update submodules [skip ci]"
-          git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/${{ github.repository }}
-          git push origin main
-          echo "Submodule changes committed and pushed. Exiting early."
-          exit 0
-        else
-          echo "No submodule changes detected."
-        fi
+        echo "Submodules updated successfully."
 
   setup-gcp-vm:
     runs-on: ubuntu-latest
