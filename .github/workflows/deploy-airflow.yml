@@ -18,7 +18,7 @@ name: Deploy Airflow to GCP VM
 #
 # VARIABLES (Settings > Secrets and variables > Actions > Variables):
 # - GCP_SSH_USER: SSH username for VM (e.g., gh-actions)
-# - IMAGE_NAME: Docker image name for Airflow
+# - AIRFLOW_IMAGE_NAME: Docker image name for Airflow
 #
 # =============================================================================
 
@@ -218,7 +218,7 @@ jobs:
         airflow_project_dir: /opt/airflow
         gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
         gcp_region: ${{ secrets.GCP_REGION }}
-        image_name: ${{ vars.IMAGE_NAME }}
+        image_name: ${{ vars.AIRFLOW_IMAGE_NAME }}
         airflow_admin_username: ${{ secrets.AIRFLOW_ADMIN_USERNAME }}
         airflow_admin_password: ${{ secrets.AIRFLOW_ADMIN_PASSWORD }}
         airflow_webserver_port: 8080
