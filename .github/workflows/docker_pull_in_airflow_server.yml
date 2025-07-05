@@ -33,7 +33,7 @@ on:
         options:
         - staging
         - production
-      image:
+      docker_image_name:
         description: 'Docker image to pull'
         required: true
         default: 'at-bus-load:latest'
@@ -247,13 +247,7 @@ jobs:
       run: |
         cd ansible
         make check-syntax-playbooks
-        # Choose image from client_payload if available, otherwise use inputs
-        if [ -n "${{ github.event.client_payload.docker_image_name }}" ]; then
-          IMAGE_NAME="${{ github.event.client_payload.docker_image_name }}"
-        else
-          IMAGE_NAME="${{ github.event.inputs.image }}"
-        fi
-        make docker-pull IMAGE=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/python-projects/$IMAGE_NAME
+        make docker-pull IMAGE=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/python-projects/${{ github.event.inputs.docker_image_name }}
 
 
     - name: Verify Deployment
