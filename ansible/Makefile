@@ -30,3 +30,11 @@ check-airflow-status:
 
 check-airflow-status-v:
 	uv run ansible-playbook -i inventory/production.yml playbooks/operations/status-airflow.yml -v
+
+# Docker pull with default image
+docker-pull:
+	uv run ansible-playbook -i inventory/production.yml playbooks/operations/docker-pull-simple.yml -e "docker_image_name=nginx:latest"
+
+# Docker pull with custom image (usage: make docker-pull-custom IMAGE=postgres:13)
+docker-pull-custom:
+	uv run ansible-playbook -i inventory/production.yml playbooks/operations/docker-pull.yml -e "docker_image_name=$(IMAGE)"

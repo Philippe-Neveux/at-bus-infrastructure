@@ -1,4 +1,4 @@
-name: Deploy Dags to Airflow Server
+name: Deploy Airflow to GCP VM
 
 # =============================================================================
 # GITHUB REPOSITORY SETUP REQUIRED
@@ -14,33 +14,19 @@ name: Deploy Dags to Airflow Server
 # - GCP_REGION: GCP region (e.g., australia-southeast1)
 # - AIRFLOW_ADMIN_USERNAME: Airflow admin username
 # - AIRFLOW_ADMIN_PASSWORD: Airflow admin password
+# - GH_TOKEN: GitHub token for submodule updates
 #
 # VARIABLES (Settings > Secrets and variables > Actions > Variables):
 # - GCP_SSH_USER: SSH username for VM (e.g., gh-actions)
 # - IMAGE_NAME: Docker image name for Airflow
 #
-# NOTE: If you want auto-commit of submodule updates, add this to the workflow:
-# permissions:
-#   contents: write
-# And replace the "Update submodules" step with:
-# - name: Update submodules and commit if changed
-#   run: |
-#     git submodule update --init --recursive --remote
-#     if [[ -n "$(git status --porcelain)" ]]; then
-#       git config user.name "github-actions[bot]"
-#       git config user.email "github-actions[bot]@users.noreply.github.com"
-#       git add .
-#       git commit -m "chore: update submodules [skip ci]"
-#       git push origin main
-#       echo "Submodule changes committed and pushed. Exiting early."
-#       exit 0
-#     else
-#       echo "No submodule changes detected."
-#     fi
-#
 # =============================================================================
 
 on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
     inputs:
       environment:
@@ -61,10 +47,22 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Update submodules
+    - name: Update submodules and commit if changed
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       run: |
         git submodule update --init --recursive --remote
-        echo "Submodules updated successfully."
+        if [[ -n "$(git status --porcelain)" ]]; then
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "chore: update submodules [skip ci]"
+          git push origin main
+          echo "Submodule changes committed and pushed. Exiting early."
+          exit 0
+        else
+          echo "No submodule changes detected."
+        fi
 
   setup-gcp-vm:
     runs-on: ubuntu-latest
@@ -82,7 +80,7 @@ jobs:
       uses: google-github-actions/setup-gcloud@v2
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
-
+        
     - name: Check VM Status
       id: check-vm-status
       run: |
@@ -116,7 +114,7 @@ jobs:
         echo "Waiting for VM to be fully initialized..."
         sleep 30
 
-  deploy-airflow-files:
+  deploy-airflow:
     runs-on: ubuntu-latest
     needs: setup-gcp-vm
 
@@ -242,11 +240,11 @@ jobs:
       run: |
         echo '${{ secrets.GCP_SA_KEY }}' | base64 -d > ansible/files/credentials/airflow-server-key.json
 
-    - name: Run Ansible Playbook to deploy airflow files
+    - name: Run Ansible Playbook
       run: |
         cd ansible
         make check-syntax-playbooks
-        make deploy-airflow-files
+        make deploy-airflow-v
 
     - name: Verify Deployment
       run: |
@@ -263,7 +261,7 @@ jobs:
 
     - name: Deployment Summary
       run: |
-        echo "🚀 Airflow files deployment completed!"
+        echo "🚀 Airflow deployment completed!"
         echo "🌐 Web UI: http://${{ steps.get-vm-ip.outputs.vm_ip }}:8080"
         echo "🔧 Nginx Proxy: http://${{ steps.get-vm-ip.outputs.vm_ip }}"
         echo "🌸 Flower: http://${{ steps.get-vm-ip.outputs.vm_ip }}:5555" 

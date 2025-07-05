@@ -46,8 +46,6 @@ def DAG_at_bus_load_transform():
         mount_tmp_dir = False,
         auto_remove="force",
         environment={"GCP_TOKEN": token},
-        # Task-specific retry configuration (overrides DAG defaults)
-        retries=1,
     )
 
     move_gcs_data_to_bq = DockerOperator(
