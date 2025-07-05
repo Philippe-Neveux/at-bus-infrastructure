@@ -247,7 +247,7 @@ jobs:
       run: |
         cd ansible
         make check-syntax-playbooks
-        make docker-pull-custom IMAGE=${{ github.event.inputs.image }}
+        make docker-pull IMAGE=${{ github.event.inputs.image }}
 
     - name: Verify Deployment
       run: |
