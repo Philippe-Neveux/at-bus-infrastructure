@@ -1,4 +1,4 @@
-name: Deploy Airflow to GCP VM
+name: Pull Docker Image in Airflow server
 
 # =============================================================================
 # GITHUB REPOSITORY SETUP REQUIRED
@@ -244,7 +244,7 @@ jobs:
       run: |
         cd ansible
         make check-syntax-playbooks
-        make deploy-airflow-v
+        make docker-pull-custom IMAGE={{ secrets.GCP_REGION }}-docker.pkg.dev/{{ secrets.GCP_PROJECT_ID }}/python-projects/at-bus-load:latest
 
     - name: Verify Deployment
       run: |
