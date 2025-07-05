@@ -12,6 +12,7 @@ check-syntax-playbooks:
 	uv run ansible-playbook --syntax-check -i inventory/production.yml playbooks/operations/stop-airflow.yml
 	uv run ansible-playbook --syntax-check -i inventory/production.yml playbooks/operations/restart-airflow.yml
 	uv run ansible-playbook --syntax-check -i inventory/production.yml playbooks/operations/status-airflow.yml
+	uv run ansible-playbook --syntax-check -i inventory/production.yml playbooks/operations/docker-pull.yml
 
 stop-airflow:
 	uv run ansible-playbook -i inventory/production.yml playbooks/operations/stop-airflow.yml
@@ -31,10 +32,6 @@ check-airflow-status:
 check-airflow-status-v:
 	uv run ansible-playbook -i inventory/production.yml playbooks/operations/status-airflow.yml -v
 
-# Docker pull with default image
+# Docker pull with custom image (usage: make docker-pull IMAGE=postgres:13)
 docker-pull:
-	uv run ansible-playbook -i inventory/production.yml playbooks/operations/docker-pull-simple.yml -e "docker_image_name=nginx:latest"
-
-# Docker pull with custom image (usage: make docker-pull-custom IMAGE=postgres:13)
-docker-pull-custom:
 	uv run ansible-playbook -i inventory/production.yml playbooks/operations/docker-pull.yml -e "docker_image_name=$(IMAGE)"
