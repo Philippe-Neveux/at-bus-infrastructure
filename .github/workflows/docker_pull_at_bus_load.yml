@@ -33,6 +33,13 @@ on:
         options:
         - staging
         - production
+      image:
+        description: 'Docker image to pull'
+        required: true
+        default: 'at-bus-load:latest'
+        type: 
+        options:
+        - at-bus-load:latest
 
 jobs:
   update-submodules:
@@ -110,7 +117,7 @@ jobs:
         echo "Waiting for VM to be fully initialized..."
         sleep 30
 
-  deploy-airflow:
+  docker-pull-image:
     runs-on: ubuntu-latest
     needs: setup-gcp-vm
 
@@ -240,7 +247,7 @@ jobs:
       run: |
         cd ansible
         make check-syntax-playbooks
-        make docker-pull-custom IMAGE={{ secrets.GCP_REGION }}-docker.pkg.dev/{{ secrets.GCP_PROJECT_ID }}/python-projects/at-bus-load:latest
+        make docker-pull-custom IMAGE=${{ github.event.inputs.image }}
 
     - name: Verify Deployment
       run: |
