@@ -37,7 +37,7 @@ on:
         description: 'Docker image to pull'
         required: true
         default: 'at-bus-load:latest'
-        type: 
+        type: choice
         options:
         - at-bus-load:latest
 
@@ -247,7 +247,7 @@ jobs:
       run: |
         cd ansible
         make check-syntax-playbooks
-        make docker-pull IMAGE={{ secrets.GCP_REGION }}-docker.pkg.dev/{{ secrets.GCP_PROJECT_ID }}/python-projects/${{ github.event.inputs.image }}
+        make docker-pull IMAGE=${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/python-projects/${{ github.event.inputs.image }}
 
 
     - name: Verify Deployment
