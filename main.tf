@@ -8,6 +8,15 @@ terraform {
   required_version = ">= 1.0"
 }
 
+# --- API Services ---
+
+# Enable the Cloud Resource Manager API, required to manage other project services
+resource "google_project_service" "cloudresourcemanager_api" {
+  project            = var.project_id
+  service            = "cloudresourcemanager.googleapis.com"
+  disable_on_destroy = false
+}
+
 # Enable the Compute Engine API
 resource "google_project_service" "compute_api" {
   project            = var.project_id
@@ -19,8 +28,8 @@ resource "google_project_service" "compute_api" {
 resource "google_compute_address" "static_ip" {
   name = "${var.airflow_instance_name}-static-ip"
 
-  # Depends on the API being enabled
-  depends_on = [google_project_service.compute_api]
+  # Depends on the APIs being enabled
+  depends_on = [google_project_service.compute_api, google_project_service.cloudresourcemanager_api]
 }
 
 # Create a new VM instance for Airflow
@@ -44,8 +53,11 @@ resource "google_compute_instance" "airflow_server" {
 
   tags = ["http-server", "airflow-server"]
 
-  # Depends on the API being enabled
-  depends_on = [google_project_service.compute_api]
+  # Depends on the APIs being enabled
+  depends_on = [
+    google_project_service.compute_api, 
+    google_project_service.cloudresourcemanager_api
+  ]
 }
 
 # --- GitHub Actions Service Account ---
@@ -55,6 +67,9 @@ resource "google_project_service" "iam_api" {
   project            = var.project_id
   service            = "iam.googleapis.com"
   disable_on_destroy = false
+
+  # Depends on the Cloud Resource Manager API being enabled first
+  depends_on = [google_project_service.cloudresourcemanager_api]
 }
 
 # 2. Create the service account for GitHub Actions
@@ -63,8 +78,8 @@ resource "google_service_account" "gha_at_bus_infrastructure" {
   display_name = "GitHub Actions Deployer"
   project      = var.project_id
 
-  # Depends on the IAM API being enabled first
-  depends_on = [google_project_service.iam_api]
+  # Depends on the APIs being enabled first
+  depends_on = [google_project_service.iam_api, google_project_service.cloudresourcemanager_api]
 }
 
 # 3. Grant the service account the Editor role on the project
