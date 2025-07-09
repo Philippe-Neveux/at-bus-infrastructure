@@ -1,9 +1,0 @@
-[Unit]
-Description=Airflow monitoring service
-After=network.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/monitor-airflow.sh
-User=root
-Group=root 

@@ -1,4 +1,1 @@
-logs/*
-
-ansible/files/credentials/airflow-server-key.json
 .DS_Store

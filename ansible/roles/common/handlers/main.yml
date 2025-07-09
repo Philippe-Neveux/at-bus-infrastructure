@@ -1,4 +1,0 @@
----
-- name: reload environment
-  shell: source /etc/environment
-  become: no 
