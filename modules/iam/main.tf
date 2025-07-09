@@ -14,11 +14,4 @@ resource "google_project_iam_member" "gha_at_bus_infrastructure_editor" {
 # 4. Create a key for the service account
 resource "google_service_account_key" "gha_at_bus_infrastructure_key" {
   service_account_id = google_service_account.gha_at_bus_infrastructure.name
-
-  lifecycle {
-    ignore_changes = [
-      private_key,
-      public_key
-    ]
-  }
 }
