@@ -7,7 +7,7 @@ variable "project_id" {
 variable "location" {
   description = "The location to deploy the resources in."
   type        = string
-  default     = "AU"
+  default     = "australia-southeast1"
 }
 
 variable "region" {

@@ -1,5 +1,5 @@
 variable "location" {
-  description = "The region of the bucket"
+  description = "The location of the bucket"
   type        = string
 }
 

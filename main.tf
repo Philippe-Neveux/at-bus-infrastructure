@@ -34,7 +34,7 @@ module "compute" {
 # Create the VM and its static IP address
 module "storage" {
   source                = "./modules/storage"
-  location              = var.location
+  location              = var.location  
   
   # Ensure APIs are enabled before creating compute resources
   depends_on = [module.project_services]
