@@ -4,6 +4,12 @@ variable "project_id" {
   default     = "at-bus-465401"
 }
 
+variable "location" {
+  description = "The location to deploy the resources in."
+  type        = string
+  default     = "AU"
+}
+
 variable "region" {
   description = "The region to deploy the resources in."
   type        = string

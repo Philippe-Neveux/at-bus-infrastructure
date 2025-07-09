@@ -2,7 +2,6 @@
 resource "google_service_account" "gha_at_bus_infrastructure" {
   account_id   = var.github_service_account_id
   display_name = "GitHub Actions Deployer"
-  project      = var.project_id
 }
 
 # 3. Grant the service account the Editor role on the project

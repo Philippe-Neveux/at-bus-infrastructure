@@ -11,7 +11,6 @@ terraform {
 # Enable all necessary project APIs
 module "project_services" {
   source     = "./modules/project_services"
-  project_id = var.project_id
 }
 
 # Create the service account and its key
@@ -26,9 +25,16 @@ module "iam" {
 # Create the VM and its static IP address
 module "compute" {
   source                = "./modules/compute"
-  project_id            = var.project_id
-  region                = var.region
   zone                  = var.zone
+  
+  # Ensure APIs are enabled before creating compute resources
+  depends_on = [module.project_services]
+}
+
+# Create the VM and its static IP address
+module "storage" {
+  source                = "./modules/storage"
+  location              = var.location
   
   # Ensure APIs are enabled before creating compute resources
   depends_on = [module.project_services]
