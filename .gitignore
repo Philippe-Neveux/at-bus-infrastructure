@@ -1,1 +1,13 @@
 .DS_Store
+
+# Terraform-specific ignores
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Crash log files
+crash.log
+
+# Exclude sensitive files
+*.tfvars
+tfplan
