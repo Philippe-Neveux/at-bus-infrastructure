@@ -1,6 +1,6 @@
 # Create a new VM instance for Airflow
 resource "google_compute_instance" "airflow_server" {
-  name         = var.airflow_instance_name
+  name         = "airflow-server"
   machine_type = var.machine_type
   zone         = var.zone
 
@@ -13,7 +13,7 @@ resource "google_compute_instance" "airflow_server" {
   network_interface {
     network = "default"
     access_config {
-      nat_ip = google_compute_address.static_ip.address
+      nat_ip = google_compute_address.airflow_server_static_ip.address
     }
   }
 
@@ -24,8 +24,44 @@ resource "google_compute_instance" "airflow_server" {
       tags,
     ]
   }
+
+  allow_stopping_for_update = true
 }
 
-resource "google_compute_address" "static_ip" {
-  name = "${var.airflow_instance_name}-static-ip"
+resource "google_compute_address" "airflow_server_static_ip" {
+  name = "airflow-server-static-ip"
+}
+
+# Create a new VM instance for Superset
+resource "google_compute_instance" "superset_server" {
+  name         = "superset-server"
+  machine_type = var.machine_type
+  zone         = var.zone
+
+  boot_disk {
+    initialize_params {
+      image = var.boot_image
+    }
+  }
+
+  network_interface {
+    network = "default"
+    access_config {
+      nat_ip = google_compute_address.superset_server_static_ip.address
+    }
+  }
+
+  tags = ["http-server", "superset-server"]
+
+  lifecycle {
+    ignore_changes = [
+      tags,
+    ]
+  }
+
+  allow_stopping_for_update = true
+}
+
+resource "google_compute_address" "superset_server_static_ip" {
+  name = "superset-server-static-ip"
 }

@@ -3,16 +3,10 @@ variable "zone" {
   type        = string
 }
 
-variable "airflow_instance_name" {
-  description = "The name of the VM instance."
-  type        = string
-  default     = "airflow-server"
-}
-
 variable "machine_type" {
   description = "The machine type for the VM instance."
   type        = string
-  default     = "e2-medium"
+  default     = "custom-4-8192"
 }
 
 variable "boot_image" {
