@@ -2,7 +2,7 @@ lint:
 	tflint
 
 tf-init:
-	terraform init
+	terraform init -upgrade
 
 tf-plan:
 	terraform plan -out tfplan

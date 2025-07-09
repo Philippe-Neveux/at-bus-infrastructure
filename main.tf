@@ -54,3 +54,10 @@ module "artifact_registry" {
 
   depends_on = [module.project_services]
 }
+
+# Create the firewall rules
+module "firewall_rules" {
+  source     = "./modules/firewall_rules"
+
+  depends_on = [module.project_services]
+}
