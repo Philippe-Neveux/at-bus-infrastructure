@@ -46,3 +46,11 @@ module "bigquery" {
 
   depends_on = [module.project_services]
 }
+
+# Create the Artifact Registry repositories
+module "artifact_registry" {
+  source     = "./modules/artifact_registry"
+  location   = var.location
+
+  depends_on = [module.project_services]
+}

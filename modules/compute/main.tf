@@ -18,6 +18,12 @@ resource "google_compute_instance" "airflow_server" {
   }
 
   tags = ["http-server", "airflow-server"]
+
+  lifecycle {
+    ignore_changes = [
+      tags,
+    ]
+  }
 }
 
 resource "google_compute_address" "static_ip" {

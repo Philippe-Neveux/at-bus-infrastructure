@@ -23,3 +23,9 @@ resource "google_project_service" "bigquery_api" {
   service            = "bigquery.googleapis.com"
   disable_on_destroy = false
 }
+
+# Enable the Artifact Registry API
+resource "google_project_service" "artifactregistry_api" {
+  service            = "artifactregistry.googleapis.com"
+  disable_on_destroy = false
+}
