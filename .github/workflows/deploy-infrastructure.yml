@@ -1,0 +1,35 @@
+name: 'Deploy Infrastructure'
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: 'read'
+
+jobs:
+  terraform:
+    name: 'Terraform Deploy'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v3
+
+      - name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: 'Set up Terraform'
+        uses: hashicorp/setup-terraform@v2
+
+      - name: 'Terraform Init'
+        run: terraform init
+
+      - name: 'Terraform Plan'
+        run: terraform plan -out=tfplan
+
+      - name: 'Terraform Apply'
+        run: terraform apply -auto-approve tfplan

@@ -33,3 +33,9 @@ variable "boot_image" {
   type        = string
   default     = "debian-cloud/debian-12"
 }
+
+variable "github_service_account_id" {
+  description = "The ID for the service account used by GitHub Actions."
+  type        = string
+  default     = "gha-at-bus-infrastructure"
+}
