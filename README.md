@@ -24,11 +24,33 @@ This Terraform project provisions a Google Cloud Compute Engine VM and a static 
     zone       = "australia-southeast1-a"
     ```
 
+## Remote State Backend Setup (First-Time Only)
+
+To enable collaboration and allow GitHub Actions to manage the infrastructure, Terraform's state must be stored remotely in a shared location. This project is configured to use a Google Cloud Storage (GCS) bucket as a remote backend.
+
+1.  **Create the GCS Bucket:**
+
+    Run the following command to create the GCS bucket. **Note:** GCS bucket names must be globally unique. If the command fails because the name is already taken, you must choose a new unique name and update it in the `backend.tf` file before running the command again.
+
+    ```sh
+    gcloud storage buckets create gs://at-bus-465401-tfstate --project=at-bus-465401 --location=australia-southeast1
+    ```
+
+2.  **Initialize Terraform and Migrate State:**
+
+    Once the bucket is created, initialize Terraform. It will detect the new backend configuration and ask you to copy your local state to the GCS bucket.
+
+    ```sh
+    terraform init
+    ```
+
+    When prompted, type `yes` to approve the state migration.
+
 ## Usage
 
 1.  **Initialize Terraform:**
 
-    This command downloads the necessary provider plugins.
+    This command downloads the necessary provider plugins. If you are setting up the project for the first time, follow the "Remote State Backend Setup" instructions first.
 
     ```sh
     make tf-init
