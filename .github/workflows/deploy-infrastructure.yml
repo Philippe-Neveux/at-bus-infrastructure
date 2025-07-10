@@ -13,6 +13,9 @@ jobs:
     name: 'Terraform Deploy'
     runs-on: ubuntu-latest
 
+    env:
+      TF_VAR_github_token: ${{ secrets.TF_VAR_GITHUB_TOKEN }}
+
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v3
