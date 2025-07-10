@@ -1,5 +1,3 @@
-
-# 2. Create the service accounts
 resource "google_service_account" "this" {
   for_each     = var.service_accounts
   account_id   = each.value.account_id
@@ -37,7 +35,6 @@ locals {
   sa_repository_map = {
     for sa_key, sa in var.service_accounts : google_service_account.this[sa_key].name => sa.repository
   }
-  unique_repositories = toset([for sa in var.service_accounts : sa.repository])
 }
 
 # Add the service account key as a secret to the GitHub repository
@@ -53,24 +50,24 @@ resource "github_actions_secret" "gcp_sa_key" {
 
 # Add the project_id as a secret to the GitHub repositories
 resource "github_actions_secret" "project_id" {
-  for_each        = local.unique_repositories
-  repository      = each.value
+  for_each        = var.service_accounts
+  repository      = each.value.repository
   secret_name     = "PROJECT_ID"
   plaintext_value = var.project_id
 }
 
 # Add the project_id as a secret to the GitHub repositories
 resource "github_actions_variable" "gcp_region" {
-  for_each        = local.unique_repositories
-  repository      = each.value
+  for_each        = var.service_accounts
+  repository      = each.value.repository
   variable_name   = "GCP_REGION"
   value           = var.region
 }
 
 # Add the project_id as a secret to the GitHub repositories
 resource "github_actions_variable" "gcp_region_zone" {
-  for_each        = local.unique_repositories
-  repository      = each.value
+  for_each        = var.service_accounts
+  repository      = each.value.repository
   variable_name   = "GCP_REGION_ZONE"
   value           = var.zone
 }
