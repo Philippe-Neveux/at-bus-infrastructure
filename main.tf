@@ -2,11 +2,11 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 4.0"
+      version = "6.43.0"
     }
     github = {
-      source  = "integrations/github"
-      version = "~> 5.0"
+      source = "integrations/github"
+      version = "6.6.0"
     }
   }
   required_version = ">= 1.0"
@@ -22,8 +22,6 @@ module "iam" {
   source                  = "./modules/iam"
   project_id              = var.project_id
   github_token            = var.github_token
-  region                  = var.region
-  zone                    = var.zone
 
   # Ensure APIs are enabled before creating IAM resources
   depends_on = [module.project_services]

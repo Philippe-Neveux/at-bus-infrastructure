@@ -55,19 +55,3 @@ resource "github_actions_secret" "project_id" {
   secret_name     = "GCP_PROJECT_ID"
   plaintext_value = var.project_id
 }
-
-# Add the project_id as a secret to the GitHub repositories
-resource "github_actions_variable" "gcp_region" {
-  for_each        = var.service_accounts
-  repository      = each.value.repository
-  variable_name   = "GCP_REGION"
-  value           = var.region
-}
-
-# Add the project_id as a secret to the GitHub repositories
-resource "github_actions_variable" "gcp_region_zone" {
-  for_each        = var.service_accounts
-  repository      = each.value.repository
-  variable_name   = "GCP_REGION_ZONE"
-  value           = var.zone
-}

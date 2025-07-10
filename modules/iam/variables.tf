@@ -3,16 +3,6 @@ variable "project_id" {
   type        = string
 }
 
-variable "region" {
-  description = "The region of the Google Cloud project."
-  type        = string
-}
-
-variable "zone" {
-  description = "The zone to deploy the resources in."
-  type        = string
-}
-
 variable "service_accounts" {
   description = "A map of service accounts to create. The key is the logical name, and the value is an object with 'account_id' and 'display_name'."
   type = map(object({
