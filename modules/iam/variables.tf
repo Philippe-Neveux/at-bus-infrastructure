@@ -9,6 +9,7 @@ variable "service_accounts" {
     account_id    = string
     display_name  = string
     project_roles = list(string)
+    repository    = string
   }))
   default = {
     gha_at_bus_load = {
@@ -17,6 +18,7 @@ variable "service_accounts" {
       project_roles = [
         "roles/artifactregistry.writer"
       ]
+      repository    = "at-bus-load"
     },
     gha_at_bus_transform = {
       account_id    = "at-bus-transform"
@@ -25,6 +27,7 @@ variable "service_accounts" {
         "roles/bigquery.dataEditor",
         "roles/bigquery.jobUser"
       ]
+      repository    = "at-bus-transform"
     },
     gha_at_bus_airflow_server = {
       account_id    = "at-bus-airflow-server"
@@ -39,6 +42,7 @@ variable "service_accounts" {
         "roles/storage.admin",
         "roles/storage.bucketViewer"
       ]
+      repository    = "at-bus-airflow-server"
     },
     gha_at_bus_superset_server = {
       account_id    = "at-bus-superset-server"
@@ -48,16 +52,12 @@ variable "service_accounts" {
         "roles/bigquery.jobUser",
         "roles/bigquery.metadataViewer",
         "roles/compute.instanceAdmin.v1",
-        "roles/iam.serviceAccountUser",
+        "roles/iam.serviceAccountUser"
       ]
+      repository    = "at-bus-superset-server"
     }
   }
 }
-
-# variable "github_repository_owner" {
-#   description = "The owner of the GitHub repository."
-#   type        = string
-# }
 
 variable "github_token" {
   description = "A GitHub personal access token with permissions to write repository secrets."
