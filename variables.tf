@@ -22,6 +22,12 @@ variable "zone" {
   default     = "australia-southeast1-b"
 }
 
+variable "github_repository_owner" {
+  description = "The owner of the GitHub repository."
+  type        = string
+  default     = "Philippe-Neveux"
+}
+
 variable "github_token" {
   description = "A GitHub personal access token with permissions to write repository secrets."
   type        = string

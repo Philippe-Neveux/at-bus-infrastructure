@@ -11,11 +11,6 @@ variable "service_accounts" {
     project_roles = list(string)
   }))
   default = {
-    gha_at_bus_infrastructure = {
-      account_id    = "at-bus-infrastructure"
-      display_name  = "GitHub Actions for at-bus-infrastructure"
-      project_roles = ["roles/editor"]
-    },
     gha_at_bus_load = {
       account_id    = "at-bus-load"
       display_name  = "GitHub Actions for at-bus-load"
