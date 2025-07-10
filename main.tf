@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 4.0"
     }
+    github = {
+      source  = "integrations/github"
+      version = "~> 5.0"
+    }
   }
   required_version = ">= 1.0"
 }
@@ -13,10 +17,11 @@ module "project_services" {
   source     = "./modules/project_services"
 }
 
-# Create the service account and its key
+# Create the service accounts and their keys
 module "iam" {
-  source                    = "./modules/iam"
-  project_id                = var.project_id
+  source                  = "./modules/iam"
+  project_id              = var.project_id
+  github_token            = var.github_token
 
   # Ensure APIs are enabled before creating IAM resources
   depends_on = [module.project_services]

@@ -21,3 +21,9 @@ variable "zone" {
   type        = string
   default     = "australia-southeast1-b"
 }
+
+variable "github_token" {
+  description = "A GitHub personal access token with permissions to write repository secrets."
+  type        = string
+  sensitive   = true
+}

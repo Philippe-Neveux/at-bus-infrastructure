@@ -1,4 +1,13 @@
-output "github_service_account_email" {
-  description = "The email address of the service account for GitHub Actions of the at-bus-infrastructure repository."
-  value       = google_service_account.gha_at_bus_infrastructure.email
+output "service_account_emails" {
+  description = "The email addresses of the created service accounts."
+  value = {
+    for k, sa in google_service_account.this : k => sa.email
+  }
+}
+
+output "github_secret_names" {
+  description = "The names of the GitHub secrets created."
+  value = {
+    for k, secret in github_actions_secret.this : k => secret.secret_name
+  }
 }
