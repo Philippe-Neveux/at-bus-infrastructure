@@ -8,6 +8,6 @@ output "service_account_emails" {
 output "github_secret_names" {
   description = "The names of the GitHub secrets created."
   value = {
-    for k, secret in github_actions_secret.this : k => secret.secret_name
+    for k, secret in github_actions_secret.gcp_sa_key : k => secret.secret_name
   }
 }

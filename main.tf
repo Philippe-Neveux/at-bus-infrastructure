@@ -22,6 +22,8 @@ module "iam" {
   source                  = "./modules/iam"
   project_id              = var.project_id
   github_token            = var.github_token
+  region                  = var.region
+  zone                    = var.zone
 
   # Ensure APIs are enabled before creating IAM resources
   depends_on = [module.project_services]
