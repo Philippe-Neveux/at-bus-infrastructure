@@ -52,7 +52,7 @@ resource "github_actions_secret" "gcp_sa_key" {
 resource "github_actions_secret" "project_id" {
   for_each        = var.service_accounts
   repository      = each.value.repository
-  secret_name     = "PROJECT_ID"
+  secret_name     = "GCP_PROJECT_ID"
   plaintext_value = var.project_id
 }
 
