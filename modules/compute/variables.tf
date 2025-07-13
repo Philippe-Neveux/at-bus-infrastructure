@@ -14,3 +14,9 @@ variable "boot_image" {
   type        = string
   default     = "debian-cloud/debian-12"
 }
+
+variable "disk_size" {
+  description = "The size of the boot disk in GB."
+  type        = number
+  default     = 30
+}

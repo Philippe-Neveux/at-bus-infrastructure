@@ -33,7 +33,7 @@ variable "service_accounts" {
       account_id    = "at-bus-airflow-server"
       display_name  = "GitHub Actions for at-bus-airflow-server"
       project_roles = [
-        "roles/artifactregistry.admin",
+        "roles/artifactregistry.writer",
         "roles/bigquery.dataEditor",
         "roles/bigquery.jobUser",
         "roles/bigquery.metadataViewer",

@@ -7,6 +7,7 @@ resource "google_compute_instance" "airflow_server" {
   boot_disk {
     initialize_params {
       image = var.boot_image
+      size  = var.disk_size
     }
   }
 
@@ -41,6 +42,7 @@ resource "google_compute_instance" "superset_server" {
   boot_disk {
     initialize_params {
       image = var.boot_image
+      size  = var.disk_size
     }
   }
 

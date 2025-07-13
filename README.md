@@ -1,8 +1,23 @@
 # AT Bus Infrastructure
 
+This repository is a part of AT Bus project. This project aims to build an ELT pipeline from open source data to a dashboard in order to visualise what are the best route bus from Avondale to Sagrado Cantina, a Mexican Restaurant in K Road, Auckland, New Zealand. The open data is provided by Auckland Transport [here](https://dev-portal.at.govt.nz/api-details#api=gtfs-api&operation=get-calendars-id).
+
+All of the repositories of this project are the follow ones:
+
+- at-bus-load: Python repository for loading data from the open API provided by Auckland Transport to a Google Cloud Storage bucket and then moved to BigQuery.
+- at-bus-transform: dbt project for transforming the data from BigQuery bronze dataset to a BigQuery gold dataset.
+- at-bus-superset-server: Superset server for visualising the BigQuery gold dataset (Ansible).
+- at-bus-airflow-server: Airflow server for orchestrating the ELT pipeline (Ansible).
+- at-bus-infrastructure: Infrastructure repository for managing the infrastructure of the project (Terraform).
+ 
+![at-bus-architecture](./docs/at-bus_infra-drawio.png)
+
+---
+
 This Terraform project provisions a comprehensive data platform on Google Cloud Platform (GCP). It sets up not just individual components, but a fully integrated environment designed for CI/CD and automated workflows.
 
 At its core, the project automates the creation of GCP resources and seamlessly integrates them with GitHub Actions by provisioning service accounts and injecting their credentials securely into your GitHub repositories.
+
 
 ## Managed Resources
 
